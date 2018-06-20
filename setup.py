@@ -13,7 +13,7 @@ REQUIRES = [
 ]
 
 setup(
-    name='mm530',
+    name='airusheng',
     version='1.0.1',
     description='',
     long_description='',
