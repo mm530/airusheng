@@ -372,6 +372,7 @@ def local_test():
     sp.logout()
     print('总共用时:', time.time() - now)
 
+
 def check_i_51job_com():
     s = socket.socket()
     s.settimeout(15)
