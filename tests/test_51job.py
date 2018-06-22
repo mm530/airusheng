@@ -29,3 +29,8 @@ class Test(TestCase):
     def test_local_many_test(self):
         os.environ['http_proxy'] = '180.121.129.74:808'
         _51job.local_many_test()
+
+    def test_download_capthca(self):
+        sp = _51job._51Job()
+        for i in range(100):
+            sp.download_captcha()
