@@ -1,7 +1,10 @@
 from unittest import TestCase
 from airusheng import _51job
 import urllib.parse
+import os
 
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 class Test(TestCase):
     def test_local_test(self):
@@ -24,4 +27,5 @@ class Test(TestCase):
         print(urllib.parse.unquote(url))
 
     def test_local_many_test(self):
+        os.environ['http_proxy'] = '180.121.129.74:808'
         _51job.local_many_test()
