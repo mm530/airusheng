@@ -422,7 +422,7 @@ def local_many_test():
     jusu = sp.search(page=1, keyword=KEYWORD, session=True, many=True)
     print('总页数:', sp.total_page)
 
-    sp.delivery_many(jusu[0][0], jusu[1])
+    sp.delivery_many(jusu[0], jusu[1])
     for page in range(2, sp.total_page + 1):
         jusu = sp.search(page=page, keyword=KEYWORD, session=True, many=True)
         sp.delivery_many(jusu[0], jusu[1])
