@@ -33,3 +33,9 @@ User-Agent:Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like G
 ```
 
 通过火狐代理设置插件及免费代理测试移动网站，确定是封了IP。
+
+现在知道，i.51job.com和m.51job.com这两个域名都是封IP的，首先因为封IP的域名是i.51job.com，我对
+m.51job.com并没有做什么，而m.51job.com却也封了IP，那说明一个问题，m.51job.com和i.51job.com这两个
+服务是部署在一台服务器上的。排除了封账号的可能。
+
+另外search.51job.com应该也是封ip的，只不过因为我的访问频率不高，所以没有触发条件。
