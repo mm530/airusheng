@@ -18,7 +18,7 @@ _51_PASSWD = 'sc5201314'
 KEYWORD = 'python'
 
 FILTER_COMPANY = ['天泰', '猎芯', '有棵树']
-FILTER_JOB_NAME = ['人工智能', '数据分析', 'java', 'Java', '大数据', '异地']
+FILTER_JOB_NAME = ['人工智能', '数据分析', 'java', 'Java', '大数据', '异地', 'ios', 'IOS']
 
 
 class _51Job:
@@ -123,7 +123,7 @@ class _51Job:
 
     search_count = 0
     search_timeout = 5
-    def search(self, page=1, keyword='爬虫', session=False):
+    def search(self, page=1, keyword='爬虫', session=False, many=False):
         if self.search_count > 100:
             raise Exception('搜索重试超过100次')
         url = requests.utils.requote_uri('https://search.51job.com/list/040000,000000,0000,00,9,07,' + keyword + ',2,' + str(page) + '.html?lang=c&stype=1&postchannel=0000&workyear=99&cotype=99&degreefrom=99&jobterm=99&companysize=99&lonlat=0%2C0&radius=-1&ord_field=0&confirmdate=9&fromType=21&dibiaoid=0&address=&line=&specialarea=00&from=&welfare=')
@@ -175,7 +175,10 @@ class _51Job:
                         if filter_job_name in job_name:
                             filter_count += 1
                     if filter_count == 0:
-                        jus.append([job_id, job_url])
+                        if not many:
+                            jus.append([job_id, job_url])
+                        else:
+                            jus.append(job_id)
 
                 except Exception as e:
                     err_count += 1
@@ -190,8 +193,11 @@ class _51Job:
                 match = re.compile('共\d+页')
                 m = match.search(r.text)
                 self.total_page = int(m.group()[1:-1])
-        
-            return jus
+
+            if not many:
+                return jus
+            else:
+                return jus, url
 
     def delivery(self, job_id, job_url):
         delivery_count = 0
@@ -222,6 +228,42 @@ class _51Job:
                 if '投递成功' not in r.text and '申请中包含已申请过的职位' not in r.text:
                     raise Exception('投递失败:' + r.text)
         _delivery(job_id, job_url, delivery_count, delivery_timeout)
+
+    def delivery_many(self, job_ids, so_url):
+        delivery_count = 0
+        delivery_timeout = 5
+
+        def _delivery_many(job_ids, so_url, delivery_count, delivery_timeout):
+            delivery_count += 1
+            if delivery_count > 3:
+                raise Exception('投递次数超过3次')
+            job_id_str = ''
+            for ji in job_ids:
+                job_id_str = str(ji) + ':' + '0,'
+            job_id_str = job_id_str[:-1]
+            url = 'https://i.51job.com//delivery/delivery.php?rand=' + str(
+                random.random()) + '&jsoncallback=jsonp' + str(int(time.time())) + '&_=' + str(int(
+                time.time())) + '&jobid=(' + job_id_str + ')&prd=search.51job.com&prp=01&cd=jobs.51job.com&cp=01&resumeid=&cvlan=&coverid=&qpostset=&elementname=hidJobID&deliverytype=1&deliverydomain=//i.51job.com/&language=c&imgpath=//img06.51jobcdn.com/'
+            headers = {
+                'Accept': '*/*',
+                'Referer': so_url,
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36',
+            }
+            try:
+                r = self.session.get(url, headers=headers, timeout=delivery_timeout)
+                print('.', end='')
+            except requests.exceptions.ReadTimeout as e:
+                delivery_timeout += 5
+                _delivery_many(job_ids, so_url, delivery_count, delivery_timeout)
+            except requests.exceptions.ConnectionError as e:
+                _delivery_many(job_ids, so_url, delivery_count, delivery_timeout)
+            else:
+                r.raise_for_status()
+                r.encoding = 'gbk'
+                logging.log(logging.DEBUG, r.text)
+                # TODO
+
+        _delivery_many(job_ids, so_url, delivery_count, delivery_timeout)
 
     logout_count = 0
     logout_timeout = 5
@@ -373,6 +415,21 @@ def local_test():
     print('总共用时:', time.time() - now)
 
 
+def local_many_test():
+    now = time.time()
+    sp = _51Job()
+    sp.login()
+    jusu = sp.search(page=1, keyword=KEYWORD, session=True, many=True)
+    print('总页数:', sp.total_page)
+
+    sp.delivery_many(jusu[0][0], jusu[1])
+    for page in range(2, sp.total_page + 1):
+        jusu = sp.search(page=page, keyword=KEYWORD, session=True, many=True)
+        sp.delivery_many(jusu[0], jusu[1])
+    sp.logout()
+    print('总共用时:', time.time() - now)
+
+
 def check_i_51job_com():
     s = socket.socket()
     s.settimeout(15)
@@ -382,4 +439,14 @@ def check_i_51job_com():
 
     print(s.recv(1024).decode())
 
+    s.close()
+
+
+def check_m_51job_com():
+    s = socket.socket()
+    s.settimeout(15)
+    sig = s.connect_ex(('m.51job.com', 443))
+    if sig != 0:
+        raise Exception('连接异常')
+    print(s.recv(1024).decode())
     s.close()

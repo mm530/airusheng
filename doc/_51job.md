@@ -9,3 +9,25 @@
 不发数据过来，证明了，确实是在服务端封了IP。服务端接收到这个请求之后，直接就丢弃了。就这么简单的事情。一开始我以为
 是硬件防火墙的问题。但是，也不能确定是不是封IP，假设是封账号呢？因为，我在手机上也测试过，手机上是可以让我成功提交的，
 那就是说，封的还是IP了。还有一个需要考虑的是，用手机的接口做下测试，如果能，就说明只是针对了PC端的网页进行了限制。
+
+隔了一个晚上之后，再去试试，注意，不要并发访问，先手工测试，如果发现能够成功请求，则表示，确实是封的IP。为了减轻
+服务端的压力，这次我决定试试批量投递的接口。经过这次测试，还是不能成功请求，那么说明，这是封了账号了。但是，我的账号
+在移动端确是能够成功访问的，那么，这时候，我可以试试用模拟移动端的方式来试试。
+
+183.62.207.202 记住今天测试的IP.
+
+分贝在360浏览器和火狐浏览器上安装user agent switch 这个插件然后修改浏览器默认请求头，然后访问m.51job.com 443端口
+发现，服务器丢弃了这个请求，打不开网页。
+
+另外今天要找出批量接口的请求方式。
+
+这是请求地址
+```
+https://i.51job.com/delivery/delivery.php?rand=0.4838858831437891&jsoncallback=jQuery18309977296096096169_1529629370861&jobid=(103694161%3A0%2C103686203%3A0)&prd=search.51job.com&prp=01&cd=search.51job.com&cp=01&resumeid=&cvlan=&coverid=&qpostset=&elementname=delivery_jobid&deliverytype=2&deliverydomain=%2F%2Fi.51job.com&language=c&imgpath=%2F%2Fimg03.51jobcdn.com&_=1529629376314
+```
+请求头
+```
+Accept:*/*
+Referer:https://search.51job.com/list/040000,000000,0000,00,9,99,python,2,1.html?lang=c&stype=&postchannel=0000&workyear=99&cotype=99&degreefrom=99&jobterm=99&companysize=99&providesalary=99&lonlat=0%2C0&radius=-1&ord_field=0&confirmdate=9&fromType=&dibiaoid=0&address=&line=&specialarea=00&from=&welfare=
+User-Agent:Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36
+```
