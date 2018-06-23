@@ -237,7 +237,7 @@ class _51Job:
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36',
             }
             try:
-                r = self.session.get(url, headers=OrderedDict(headers), timeout=delivery_timeout, data=form_data)
+                r = self.session.get(url, headers=OrderedDict(headers), timeout=delivery_timeout, params=form_data)
             except requests.exceptions.ReadTimeout as e:
                 delivery_timeout += 5
                 _delivery(job_id, job_url, delivery_count, delivery_timeout, proxies)
@@ -246,7 +246,7 @@ class _51Job:
             else:
                 r.raise_for_status()
                 r.encoding = 'gbk'
-                print(r.text)
+                print('delivery log:', r.text)
                 if '投递成功' not in r.text and '申请中包含已申请过的职位' not in r.text:
                     raise Exception('投递失败:' + r.text)
         _delivery(job_id, job_url, delivery_count, delivery_timeout, proxies)
@@ -265,9 +265,12 @@ class _51Job:
             job_id_str = job_id_str[:-1]
             url = 'https://i.51job.com//delivery/delivery.php?rand=' + str(
                 random.random()) + '&jsoncallback=jsonp' + str(int(time.time())) + '&_=' + str(int(
-                time.time())) + '&jobid=(' + job_id_str + ')&prd=search.51job.com&prp=01&cd=jobs.51job.com&cp=01&resumeid=&cvlan=&coverid=&qpostset=&elementname=hidJobID&deliverytype=1&deliverydomain=//i.51job.com/&language=c&imgpath=//img06.51jobcdn.com/'
+                time.time())) + '&jobid=(' + job_id_str + ')&prd=search.51job.com&prp=01&cd=jobs.51job.com&cp=01&resumeid=&cvlan=&coverid=&qpostset=&elementname=hidJobID&deliverytype=2&deliverydomain=//i.51job.com/&language=c&imgpath=//img06.51jobcdn.com/'
             headers = {
                 'Accept': '*/*',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Accept-Language': 'zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2',
+                'Host': 'i.51job.com',
                 'Referer': so_url,
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36',
             }
@@ -282,9 +285,9 @@ class _51Job:
             else:
                 r.raise_for_status()
                 r.encoding = 'gbk'
-                logging.log(logging.DEBUG, r.text)
-                # TODO
-
+                print(r.text)
+                if '申请中包含已申请过的职位' not in r.text and '成功' not in r.text:
+                    raise Exception('批量申请失败')
         _delivery_many(job_ids, so_url, delivery_count, delivery_timeout, proxies)
 
     logout_count = 0
@@ -417,11 +420,13 @@ def local_test(ips):
 
     ji = 0
     while ji < len(jus):
-        index = random.randint(0, len(ips) - 1)
-        proxies = {
-            'http': 'http://' + ips[index].ip + ':' + ips[index].port,
-            'https': 'http://' + ips[index].ip + ':' + ips[index].port,
-        }
+        proxies = {}
+        if len(ips) > 0:
+            index = random.randint(0, len(ips) - 1)
+            proxies = {
+                'http': 'http://' + ips[index].ip + ':' + ips[index].port,
+                'https': 'http://' + ips[index].ip + ':' + ips[index].port,
+            }
         try:
             sp.delivery(jus[ji][0], jus[ji][1], proxies=proxies)
         except:
@@ -462,21 +467,25 @@ def local_many_test(ips):
     jusu = sp.search(page=1, keyword=KEYWORD, session=True, many=True)
     print('总页数:', sp.total_page)
 
-    index = random.randint(0, len(ips) - 1)
-    proxies = {
-        'http': ips[index].type + '://' + ips[index].ip + ';' + ips[index].port,
-        'https': ips[index].type + '://' + ips[index].ip + ';' + ips[index].port,
-    }
+    proxies = {}
+    if len(ips) > 0:
+        index = random.randint(0, len(ips) - 1)
+        proxies = {
+            'http': ips[index].type + '://' + ips[index].ip + ':' + ips[index].port,
+            'https': ips[index].type + '://' + ips[index].ip + ':' + ips[index].port,
+        }
 
     sp.delivery_many(jusu[0], jusu[1], proxies=proxies)
     for page in range(2, sp.total_page + 1):
         jusu = sp.search(page=page, keyword=KEYWORD, session=True, many=True)
 
-        index = random.randint(0, len(ips) - 1)
-        proxies = {
-            'http': ips[index].type + '://' + ips[index].ip + ';' + ips[index].port,
-            'https': ips[index].type + '://' + ips[index].ip + ';' + ips[index].port,
-        }
+        proxies = {}
+        if len(ips) > 0:
+            index = random.randint(0, len(ips) - 1)
+            proxies = {
+                'http': ips[index].type + '://' + ips[index].ip + ';' + ips[index].port,
+                'https': ips[index].type + '://' + ips[index].ip + ';' + ips[index].port,
+            }
         sp.delivery_many(jusu[0], jusu[1], proxies=proxies)
     sp.logout()
     print('总共用时:', time.time() - now)

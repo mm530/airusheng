@@ -44,8 +44,21 @@ class Test(TestCase):
         print(urllib.parse.unquote(url))
 
     def test_local_many_test(self):
-        os.environ['http_proxy'] = '180.121.129.74:808'
-        _51job.local_many_test()
+        # os.environ['http_proxy'] = '180.121.129.74:808'
+        # ok_ips = []
+        # def is_ok(ip):
+        #     if _51job.check_proxy_i_51job_com(ip):
+        #         ok_ips.append(ip)
+        #
+        # ts = []
+        # for ip in IPS:
+        #     t = Thread(target=is_ok, args=(ip, ))
+        #     t.start()
+        # for t in ts:
+        #     t.join()
+        # print('共有可用IP数:', len(ok_ips))
+        _51job.KEYWORD = 'linux'
+        _51job.local_many_test([])
 
     def test_download_capthca(self):
         sp = _51job._51Job()
