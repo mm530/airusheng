@@ -12,6 +12,7 @@ from io import BytesIO
 import pickle
 import logging
 import socket
+from . import proxy_ip
 
 _51_ACCOUNT = '15800223273'
 _51_PASSWD = 'sc5201314'
@@ -199,11 +200,11 @@ class _51Job:
             else:
                 return jus, url
 
-    def delivery(self, job_id, job_url):
+    def delivery(self, job_id, job_url, proxies={}):
         delivery_count = 0
-        delivery_timeout = 5
+        delivery_timeout = 30
 
-        def _delivery(job_id, job_url, delivery_count, delivery_timeout):
+        def _delivery(job_id, job_url, delivery_count, delivery_timeout, proxies):
             delivery_count += 1
             if delivery_count > 3:
                 raise Exception('投递次数超过3次')
@@ -218,22 +219,22 @@ class _51Job:
                 print('.', end='')
             except requests.exceptions.ReadTimeout as e:
                 delivery_timeout += 5
-                _delivery(job_id, job_url, delivery_count, delivery_timeout)
+                _delivery(job_id, job_url, delivery_count, delivery_timeout, proxies)
             except requests.exceptions.ConnectionError as e:
-                _delivery(job_id, job_url, delivery_count, delivery_timeout)
+                _delivery(job_id, job_url, delivery_count, delivery_timeout, proxies)
             else:
                 r.raise_for_status()
                 r.encoding = 'gbk'
                 logging.log(logging.DEBUG, r.text)
                 if '投递成功' not in r.text and '申请中包含已申请过的职位' not in r.text:
                     raise Exception('投递失败:' + r.text)
-        _delivery(job_id, job_url, delivery_count, delivery_timeout)
+        _delivery(job_id, job_url, delivery_count, delivery_timeout, proxies)
 
-    def delivery_many(self, job_ids, so_url):
+    def delivery_many(self, job_ids, so_url, proxies={}):
         delivery_count = 0
-        delivery_timeout = 5
+        delivery_timeout = 30
 
-        def _delivery_many(job_ids, so_url, delivery_count, delivery_timeout):
+        def _delivery_many(job_ids, so_url, delivery_count, delivery_timeout, proxies):
             delivery_count += 1
             if delivery_count > 3:
                 raise Exception('投递次数超过3次')
@@ -250,20 +251,20 @@ class _51Job:
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36',
             }
             try:
-                r = self.session.get(url, headers=headers, timeout=delivery_timeout)
+                r = self.session.get(url, headers=headers, timeout=delivery_timeout, proxies=proxies)
                 print('.', end='')
             except requests.exceptions.ReadTimeout as e:
                 delivery_timeout += 5
-                _delivery_many(job_ids, so_url, delivery_count, delivery_timeout)
+                _delivery_many(job_ids, so_url, delivery_count, delivery_timeout, proxies)
             except requests.exceptions.ConnectionError as e:
-                _delivery_many(job_ids, so_url, delivery_count, delivery_timeout)
+                _delivery_many(job_ids, so_url, delivery_count, delivery_timeout, proxies)
             else:
                 r.raise_for_status()
                 r.encoding = 'gbk'
                 logging.log(logging.DEBUG, r.text)
                 # TODO
 
-        _delivery_many(job_ids, so_url, delivery_count, delivery_timeout)
+        _delivery_many(job_ids, so_url, delivery_count, delivery_timeout, proxies)
 
     logout_count = 0
     logout_timeout = 5
@@ -393,19 +394,46 @@ def local_test():
     jus = sp.search(page=1, keyword=keyword, session=True)
     print('总页数:', sp.total_page)
 
+    kc = proxy_ip.Kuaidaili_com()
+    ips = []
+    for i in range(1, 10):
+        ips += kc.free_inha(i)
+        time.sleep(20)
+
+    print(ips)
+
     ji = 0
     while ji < len(jus):
-        sp.delivery(jus[ji][0], jus[ji][1])
+        index = random.randint(0, len(ips) - 1)
+        proxies = {
+            'http': ips[index].type + '://' + ips[index].ip + ';' + ips[index].port,
+            'https': ips[index].type + '://' + ips[index].ip + ';' + ips[index].port,
+        }
+        print(proxies)
+        try:
+            sp.delivery(jus[ji][0], jus[ji][1], proxies=proxies)
+        except:
+            del ips[index]
+            continue
         ji += 1
 
     print('\n第1页任务结束')
-    
+
     for i in range(2, sp.total_page + 1):
         ts = []
         ji = 0
         jus = sp.search(page=i, keyword=keyword, session=True)
         while ji < len(jus):
-            sp.delivery(jus[ji][0], jus[ji][1])
+            index = random.randint(0, len(ips) - 1)
+            proxies = {
+                'http': ips[index].type + '://' + ips[index].ip + ';' + ips[index].port,
+                'https': ips[index].type + '://' + ips[index].ip + ';' + ips[index].port,
+            }
+            try:
+                sp.delivery(jus[ji][0], jus[ji][1], proxies=proxies)
+            except:
+                del ips[index]
+                continue
             if ji == len(jus) - 1:
                 print('.')
             ji += 1
@@ -422,10 +450,27 @@ def local_many_test():
     jusu = sp.search(page=1, keyword=KEYWORD, session=True, many=True)
     print('总页数:', sp.total_page)
 
-    sp.delivery_many(jusu[0], jusu[1])
+    kc = proxy_ip.Kuaidaili_com()
+    ips = []
+    for i in range(1, 10):
+        ips += kc.free_inha(i)
+        time.sleep(10)
+    index = random.randint(0, len(ips) - 1)
+    proxies = {
+        'http': ips[index].type + '://' + ips[index].ip + ';' + ips[index].port,
+        'https': ips[index].type + '://' + ips[index].ip + ';' + ips[index].port,
+    }
+
+    sp.delivery_many(jusu[0], jusu[1], proxies=proxies)
     for page in range(2, sp.total_page + 1):
         jusu = sp.search(page=page, keyword=KEYWORD, session=True, many=True)
-        sp.delivery_many(jusu[0], jusu[1])
+
+        index = random.randint(0, len(ips) - 1)
+        proxies = {
+            'http': ips[index].type + '://' + ips[index].ip + ';' + ips[index].port,
+            'https': ips[index].type + '://' + ips[index].ip + ';' + ips[index].port,
+        }
+        sp.delivery_many(jusu[0], jusu[1], proxies=proxies)
     sp.logout()
     print('总共用时:', time.time() - now)
 
