@@ -57,7 +57,7 @@ class Test(TestCase):
         # for t in ts:
         #     t.join()
         # print('共有可用IP数:', len(ok_ips))
-        _51job.KEYWORD = 'linux'
+        _51job.KEYWORD = 'python'
         _51job.local_many_test([])
 
     def test_download_capthca(self):
