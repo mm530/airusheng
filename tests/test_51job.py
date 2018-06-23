@@ -4,13 +4,28 @@ import urllib.parse
 import os
 from airusheng.proxy_ip import get_ips
 import random
+from threading import Thread
 
 
 IPS = get_ips()
+print('共有%d个IP' % len(IPS))
 
 class Test(TestCase):
     def test_local_test(self):
-        _51job.local_test(IPS)
+        ok_ips = []
+        def is_ok(ip):
+            if _51job.check_proxy_i_51job_com(ip):
+                ok_ips.append(ip)
+
+        ts = []
+        for ip in IPS:
+            t = Thread(target=is_ok, args=(ip, ))
+            t.start()
+        for t in ts:
+            t.join()
+        print('可以使用的IP有:%d个' % len(ok_ips))
+
+        _51job.local_test(ok_ips)
 
     def test_distribute_delivery(self):
         _51job.distribute_delivery()

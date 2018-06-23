@@ -12,6 +12,7 @@ from io import BytesIO
 import pickle
 import logging
 import socket
+from requests.utils import OrderedDict
 
 _51_ACCOUNT = '15800223273'
 _51_PASSWD = 'sc5201314'
@@ -207,15 +208,36 @@ class _51Job:
             delivery_count += 1
             if delivery_count > 3:
                 raise Exception('投递次数超过3次')
-            url = 'https://i.51job.com//delivery/delivery.php?rand=' + str(random.random()) + '&jsoncallback=jsonp' + str(int(time.time())) + '&_=' + str(int(time.time())) + '&jobid=(' + job_id +':0)&prd=search.51job.com&prp=01&cd=jobs.51job.com&cp=01&resumeid=&cvlan=&coverid=&qpostset=&elementname=hidJobID&deliverytype=1&deliverydomain=//i.51job.com/&language=c&imgpath=//img06.51jobcdn.com/'
+            url = 'https://i.51job.com/delivery/delivery.php'
+            form_data = {
+                '_': int(time.time()),
+                'cd':'search.51job.com',
+                'coverid': '',
+                'cp': '01',
+                'cvlan': '',
+                'deliverydomain': '//i.51job.com',
+                'deliverytype': '2',
+                'elementname': 'delivery_jobid',
+                'imgpath': '//img06.51jobcdn.com',
+                'jobid': '(' + job_id + ':0)',
+                'jsoncallback': 'jQuery%d_%d' % (int(time.time()), int(time.time())),
+                'language': 'c',
+                'prd': 'search.51job.com',
+                'prp': '01',
+                'qpostset':'',
+                'rand': random.random(),
+                'resumeid': '',
+            }
             headers = {
                 'Accept': '*/*',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Accept-Language': 'zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2',
+                'Host': 'i.51job.com',
                 'Referer': job_url,
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36',
             }
             try:
-                r = self.session.get(url, headers=headers, timeout=delivery_timeout)
-                print('.', end='')
+                r = self.session.get(url, headers=OrderedDict(headers), timeout=delivery_timeout, data=form_data)
             except requests.exceptions.ReadTimeout as e:
                 delivery_timeout += 5
                 _delivery(job_id, job_url, delivery_count, delivery_timeout, proxies)
@@ -397,16 +419,14 @@ def local_test(ips):
     while ji < len(jus):
         index = random.randint(0, len(ips) - 1)
         proxies = {
-            'http': ips[index].type + '://' + ips[index].ip + ';' + ips[index].port,
-            'https': ips[index].type + '://' + ips[index].ip + ';' + ips[index].port,
+            'http': 'http://' + ips[index].ip + ':' + ips[index].port,
+            'https': 'http://' + ips[index].ip + ':' + ips[index].port,
         }
         try:
             sp.delivery(jus[ji][0], jus[ji][1], proxies=proxies)
         except:
             del ips[index]
             continue
-        else:
-            print(proxies)
         ji += 1
 
     print('\n第1页任务结束')
@@ -495,13 +515,12 @@ def check_proxy_i_51job_com(ip):
         'http': 'http://' + ip.ip + ':' + ip.port,
         'https': 'http://' + ip.ip + ':' + ip.port,
     }
-    print(proxies)
     try:
-        r = requests.get(url, headers=headers, proxies=proxies, timeout=30)
+        r = requests.get(url, headers=headers, proxies=proxies, timeout=10)
     except Exception as e:
         return False
     else:
         r.encoding = 'utf-8'
-        print(r.text)
+        # print(r.text)
         return True
 
