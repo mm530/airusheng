@@ -12,7 +12,6 @@ from io import BytesIO
 import pickle
 import logging
 import socket
-from . import proxy_ip
 
 _51_ACCOUNT = '15800223273'
 _51_PASSWD = 'sc5201314'
@@ -225,7 +224,7 @@ class _51Job:
             else:
                 r.raise_for_status()
                 r.encoding = 'gbk'
-                logging.log(logging.DEBUG, r.text)
+                print(r.text)
                 if '投递成功' not in r.text and '申请中包含已申请过的职位' not in r.text:
                     raise Exception('投递失败:' + r.text)
         _delivery(job_id, job_url, delivery_count, delivery_timeout, proxies)
@@ -385,7 +384,7 @@ def do_delivery_task():
         do_delivery_task()
 
 
-def local_test():
+def local_test(ips):
     now = time.time()
     sp = _51Job()
     sp.login()
@@ -394,14 +393,6 @@ def local_test():
     jus = sp.search(page=1, keyword=keyword, session=True)
     print('总页数:', sp.total_page)
 
-    kc = proxy_ip.Kuaidaili_com()
-    ips = []
-    for i in range(1, 10):
-        ips += kc.free_inha(i)
-        time.sleep(20)
-
-    print(ips)
-
     ji = 0
     while ji < len(jus):
         index = random.randint(0, len(ips) - 1)
@@ -409,12 +400,13 @@ def local_test():
             'http': ips[index].type + '://' + ips[index].ip + ';' + ips[index].port,
             'https': ips[index].type + '://' + ips[index].ip + ';' + ips[index].port,
         }
-        print(proxies)
         try:
             sp.delivery(jus[ji][0], jus[ji][1], proxies=proxies)
         except:
             del ips[index]
             continue
+        else:
+            print(proxies)
         ji += 1
 
     print('\n第1页任务结束')
@@ -443,18 +435,13 @@ def local_test():
     print('总共用时:', time.time() - now)
 
 
-def local_many_test():
+def local_many_test(ips):
     now = time.time()
     sp = _51Job()
     sp.login()
     jusu = sp.search(page=1, keyword=KEYWORD, session=True, many=True)
     print('总页数:', sp.total_page)
 
-    kc = proxy_ip.Kuaidaili_com()
-    ips = []
-    for i in range(1, 10):
-        ips += kc.free_inha(i)
-        time.sleep(10)
     index = random.randint(0, len(ips) - 1)
     proxies = {
         'http': ips[index].type + '://' + ips[index].ip + ';' + ips[index].port,
@@ -495,3 +482,26 @@ def check_m_51job_com():
         raise Exception('连接异常')
     print(s.recv(1024).decode())
     s.close()
+
+
+def check_proxy_i_51job_com(ip):
+    url = 'https://i.51job.com'
+    headers = {
+        'Accept': '*/*',
+        'Referer': url,
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36',
+    }
+    proxies = {
+        'http': 'http://' + ip.ip + ':' + ip.port,
+        'https': 'http://' + ip.ip + ':' + ip.port,
+    }
+    print(proxies)
+    try:
+        r = requests.get(url, headers=headers, proxies=proxies, timeout=30)
+    except Exception as e:
+        return False
+    else:
+        r.encoding = 'utf-8'
+        print(r.text)
+        return True
+

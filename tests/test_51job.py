@@ -2,13 +2,15 @@ from unittest import TestCase
 from airusheng import _51job
 import urllib.parse
 import os
+from airusheng.proxy_ip import get_ips
+import random
 
-import logging
-logging.basicConfig(level=logging.DEBUG)
+
+IPS = get_ips()
 
 class Test(TestCase):
     def test_local_test(self):
-        _51job.local_test()
+        _51job.local_test(IPS)
 
     def test_distribute_delivery(self):
         _51job.distribute_delivery()
@@ -34,3 +36,9 @@ class Test(TestCase):
         sp = _51job._51Job()
         for i in range(100):
             sp.download_captcha()
+
+    def test_check_proxy_i_51job_com(self):
+        index = random.randint(0, len(IPS) - 1)
+        ip = IPS[index]
+        result = _51job.check_proxy_i_51job_com(ip)
+        self.assertTrue(result)

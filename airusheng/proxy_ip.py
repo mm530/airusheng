@@ -2,6 +2,7 @@ import requests
 from lxml import etree
 import os
 import os.path
+import time
 
 
 class IP:
@@ -61,13 +62,52 @@ class Kuaidaili_com:
 
 
 class Ip_seofangfa_com:
+    index_count = 0
+    index_timeout = 30
     def index(self):
+        self.index_count += 1
+        if self.index_count > 3:
+            raise Exception('主页重试次数超过3次')
         url = 'https://ip.seofangfa.com/'
         headers = {
-
+            'Host': 'ip.seofangfa.com',
+            'User-Agent': 'Mozilla/5.0 (Linux; Android 7.0; SM-G935P Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.111 Mobile Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
         }
-        r = requests.get(url, headers=headers)
-        r.raise_for_status()
-        r.encoding = 'utf-8'
-        page = etree.HTML(r.text)
-        trs = page.xpath('//table[@class="table"]/tbody/tr')
+        try:
+            r = requests.get(url, headers=headers)
+        except requests.exceptions.ReadTimeout as e:
+            self.index_timeout += 5
+            self.index()
+        else:
+            r.raise_for_status()
+            r.encoding = 'utf-8'
+            page = etree.HTML(r.text)
+            trs = page.xpath('//table[@class="table"]/tbody/tr')
+            ips = []
+            for tr in trs:
+                tds = tr.xpath('./td')
+                ip = tds[0].xpath('./text()')[0].strip()
+                port = tds[1].xpath('./text()')[0].strip()
+                speed = tds[2].xpath('./text()')[0].strip()
+                check_time = tds[4].xpath('./text()')[0].strip()
+                type = 'http'
+                ips.append(IP(ip, port, type, speed, check_time))
+            return ips
+
+
+def get_ips():
+    #kc = Kuaidaili_com()
+    isc = Ip_seofangfa_com()
+    ips = []
+
+    # for i in range(1, 4):
+    #     ips += kc.free_inha(i)
+    #     time.sleep(15)
+
+    ips += isc.index()
+
+    return ips
