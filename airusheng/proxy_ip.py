@@ -13,7 +13,7 @@ class IP:
         self.speed = speed
         self.check_time = check_time
 
-    def __str(self):
+    def __str__(self):
         return self.type + self.ip + ':' + self.port
 
 
