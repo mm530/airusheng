@@ -186,7 +186,7 @@ class _51Job:
                     if err_count == 1:
                         if not os.path.exists('51job'):
                             os.mkdir('51job')
-                        with open('51job' + os.path.sep + str(time.time()) + '.log', 'w') as f:
+                        with open('51job' + os.path.sep + str(time.time()) + '.log', 'w', encoding='gbk') as f:
                             f.write(r.text)
                     continue
 
@@ -409,7 +409,68 @@ def do_delivery_task():
         do_delivery_task()
 
 
+def distribute_delivery_many():
+    credentials = pika.PlainCredentials(AMQP_USER, AMQP_PASS)
+    conn = pika.BlockingConnection(pika.ConnectionParameters(host=AMQP_HOST, credentials=credentials))
+    ch = conn.channel()
+    ch.queue_declare('delivery', durable=True)
+
+    sp = _51Job()
+    sp.login()
+    keyword = KEYWORD
+    sp._51job_com()
+    ju = sp.search(page=1, keyword=keyword, session=True, many=True)
+    print('总页数:', sp.total_page)
+    spp = pickle.dumps(sp)
+
+    body = pickle.dumps([spp, ju])
+    ch.basic_publish(exchange='', routing_key='delivery_many', properties=pika.BasicProperties(delivery_mode=2), body=body)
+    print('第1页任务结束')
+
+    for i in range(2, sp.total_page + 1):
+        ju = sp.search(page=i, keyword=keyword, session=True, many=True)
+        body = pickle.dumps([spp, ju])
+        ch.basic_publish(exchange='', routing_key='delivery', properties=pika.BasicProperties(delivery_mode=2), body=body)
+        print('第%d页任务结束' % i)
+
+    ch.close()
+    conn.close()
+
+def do_delivery_task_many():
+    try:
+        credentials = pika.PlainCredentials(AMQP_USER, AMQP_PASS)
+        conn = pika.BlockingConnection(pika.ConnectionParameters(host=AMQP_HOST, credentials=credentials))
+        ch = conn.channel()
+
+        ch.queue_declare('delivery', durable=True)
+        ch.basic_qos(prefetch_count=1)
+
+        def callback(ch, method, properties, body):
+            def task(ch, method, body):
+                spj = pickle.loads(body)
+                pickle.loads(spj[0]).delivery_many(spj[1][0], spj[1][1])
+                ch.basic_ack(delivery_tag=method.delivery_tag)
+            try:
+                Thread(target=task, args=(ch, method, body)).start()
+            except Exception as e:
+                if '投递失败' not in str(e):
+                    ch.basic_publish(exchange='', routing_key='delivery', properties=pika.BasicProperties(delivery_mode=2), body=body)
+
+        ch.basic_consume(callback, queue='delivery', no_ack=False)
+        ch.start_consuming()
+        ch.close()
+        conn.close()
+    except pika.exceptions.ConnectionClosed as e:
+        print(e)
+        do_delivery_task()
+
+
 def local_test(ips):
+    '''
+    单个投递，如果多线程弄，很容易导致对面数据库挂掉，直接就导致IP被封死。
+    :param ips:
+    :return:
+    '''
     now = time.time()
     sp = _51Job()
     sp.login()
@@ -461,6 +522,11 @@ def local_test(ips):
 
 
 def local_many_test(ips):
+    '''
+    批量投递，有多少页就发送多少个投递请求，相对来说，效率是单个投递效率的50倍。封IP的几率大大降低。
+    :param ips:
+    :return:
+    '''
     now = time.time()
     sp = _51Job()
     sp.login()
