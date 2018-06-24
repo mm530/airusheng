@@ -1,23 +1,19 @@
 from unittest import TestCase
 from airusheng import _51job
 import urllib.parse
-import os
 from airusheng.proxy_ip import get_ips
 import random
 from threading import Thread
 
 
-IPS = get_ips()
-print('共有%d个IP' % len(IPS))
-
-def get_checked_ip():
+def get_checked_ip(ips):
     ok_ips = []
     def is_ok(ip):
         if _51job.check_proxy_i_51job_com(ip):
             ok_ips.append(ip)
 
     ts = []
-    for ip in IPS:
+    for ip in ips:
         t = Thread(target=is_ok, args=(ip,))
         t.start()
     for t in ts:
@@ -25,14 +21,24 @@ def get_checked_ip():
 
     return ok_ips
 
+
+def account_init():
+    _51job._51_ACCOUNT = input('tel:')
+    _51job._51_PASSWD = input('pass:')
+    _51job.KEYWORD = input('keyword:')
+
+
 class Test(TestCase):
     def test_local_test(self):
-        ok_ips = get_checked_ip()
+        account_init()
+        ips = get_ips()
+        ok_ips = get_checked_ip(ips)
         print('可以使用的IP有:%d个' % len(ok_ips), ok_ips)
 
         _51job.local_test(ok_ips)
 
     def test_distribute_delivery(self):
+        account_init()
         _51job.distribute_delivery()
 
     def test_do_delivery_task(self):
@@ -49,10 +55,7 @@ class Test(TestCase):
         print(urllib.parse.unquote(url))
 
     def test_local_many_test(self):
-        # os.environ['http_proxy'] = '180.121.129.74:808'
-        ok_ips = get_checked_ip()
-        print('共有可用IP数:', len(ok_ips))
-        _51job.KEYWORD = 'python'
+        account_init()
         _51job.local_many_test([])
 
     def test_download_capthca(self):
@@ -61,7 +64,8 @@ class Test(TestCase):
             sp.download_captcha()
 
     def test_check_proxy_i_51job_com(self):
-        index = random.randint(0, len(IPS) - 1)
-        ip = IPS[index]
+        ips = get_ips()
+        index = random.randint(0, len(ips) - 1)
+        ip = ips[index]
         result = _51job.check_proxy_i_51job_com(ip)
         self.assertTrue(result)

@@ -10,7 +10,6 @@ import pika
 from PIL import Image
 from io import BytesIO
 import pickle
-import logging
 import socket
 from requests.utils import OrderedDict
 
@@ -91,6 +90,10 @@ class _51Job:
             r.raise_for_status()
             r.encoding = 'gbk'
             if '"result":"1"' not in r.text:
+                if not os.path.exists('51job'):
+                    os.mkdir('51job')
+                with open('51job' + os.path.sep + 'login_' + str(time.time()) + '.log', 'w', encoding='gbk') as f:
+                    f.write(r.text)
                 raise Exception('登录失败')
 
     _51job_com_count = 0
@@ -186,7 +189,7 @@ class _51Job:
                     if err_count == 1:
                         if not os.path.exists('51job'):
                             os.mkdir('51job')
-                        with open('51job' + os.path.sep + str(time.time()) + '.log', 'w', encoding='gbk') as f:
+                        with open('51job' + os.path.sep + 'delivery_' + str(time.time()) + '.log', 'w', encoding='gbk') as f:
                             f.write(r.text)
                     continue
 
