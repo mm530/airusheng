@@ -14,8 +14,8 @@ import logging
 import socket
 from requests.utils import OrderedDict
 
-_51_ACCOUNT = '15800223273'
-_51_PASSWD = 'sc5201314'
+_51_ACCOUNT = 'YOUR TEL'
+_51_PASSWD = 'YOUR PASS'
 KEYWORD = 'python'
 
 FILTER_COMPANY = ['天泰', '猎芯', '有棵树']
