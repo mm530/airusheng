@@ -9,11 +9,11 @@ class Test(TestCase):
         for i in range(3):
             ips = kc.free_inha(i + 1)
             for ip in ips:
-                print(ip.ip, ip.port, ip.type, ip.speed, ip.check_time)
+                print(ip)
             time.sleep(10)
 
     def test_ip_seofangfa_com_index(self):
         isc = Ip_seofangfa_com()
         ips = isc.index()
         for ip in ips:
-            print(ip.ip, ip.port, ip.type, ip.speed, ip.check_time)
+            print(ip)
