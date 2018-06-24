@@ -598,4 +598,3 @@ def check_proxy_i_51job_com(ip):
         r.encoding = 'utf-8'
         # print(r.text)
         return True
-

@@ -13,6 +13,9 @@ class IP:
         self.speed = speed
         self.check_time = check_time
 
+    def __str(self):
+        return self.type + self.ip + ':' + self.port
+
 
 class Kuaidaili_com:
     free_inha_count = 0
@@ -100,13 +103,13 @@ class Ip_seofangfa_com:
 
 
 def get_ips():
-    #kc = Kuaidaili_com()
+    kc = Kuaidaili_com()
     isc = Ip_seofangfa_com()
     ips = []
 
-    # for i in range(1, 4):
-    #     ips += kc.free_inha(i)
-    #     time.sleep(15)
+    for i in range(1, 4):
+        ips += kc.free_inha(i)
+        time.sleep(15)
 
     ips += isc.index()
 

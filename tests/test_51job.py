@@ -23,7 +23,7 @@ class Test(TestCase):
             t.start()
         for t in ts:
             t.join()
-        print('可以使用的IP有:%d个' % len(ok_ips))
+        print('可以使用的IP有:%d个' % len(ok_ips), ok_ips)
 
         _51job.local_test(ok_ips)
 
