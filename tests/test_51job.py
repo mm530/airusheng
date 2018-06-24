@@ -10,19 +10,24 @@ from threading import Thread
 IPS = get_ips()
 print('共有%d个IP' % len(IPS))
 
+def get_checked_ip():
+    ok_ips = []
+    def is_ok(ip):
+        if _51job.check_proxy_i_51job_com(ip):
+            ok_ips.append(ip)
+
+    ts = []
+    for ip in IPS:
+        t = Thread(target=is_ok, args=(ip,))
+        t.start()
+    for t in ts:
+        t.join()
+
+    return ok_ips
+
 class Test(TestCase):
     def test_local_test(self):
-        ok_ips = []
-        def is_ok(ip):
-            if _51job.check_proxy_i_51job_com(ip):
-                ok_ips.append(ip)
-
-        ts = []
-        for ip in IPS:
-            t = Thread(target=is_ok, args=(ip, ))
-            t.start()
-        for t in ts:
-            t.join()
+        ok_ips = get_checked_ip()
         print('可以使用的IP有:%d个' % len(ok_ips), ok_ips)
 
         _51job.local_test(ok_ips)
@@ -45,18 +50,8 @@ class Test(TestCase):
 
     def test_local_many_test(self):
         # os.environ['http_proxy'] = '180.121.129.74:808'
-        # ok_ips = []
-        # def is_ok(ip):
-        #     if _51job.check_proxy_i_51job_com(ip):
-        #         ok_ips.append(ip)
-        #
-        # ts = []
-        # for ip in IPS:
-        #     t = Thread(target=is_ok, args=(ip, ))
-        #     t.start()
-        # for t in ts:
-        #     t.join()
-        # print('共有可用IP数:', len(ok_ips))
+        ok_ips = get_checked_ip()
+        print('共有可用IP数:', len(ok_ips))
         _51job.KEYWORD = 'python'
         _51job.local_many_test([])
 
