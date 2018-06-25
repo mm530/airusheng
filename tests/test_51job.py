@@ -83,5 +83,3 @@ class Test(TestCase):
         print(_51job._51_ACCOUNT)
         sp.download_captcha(True, True)
         sp.check_verify_code(input('input verify code:'))
-        sp.login()
-        sp.logout()

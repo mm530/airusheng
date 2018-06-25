@@ -86,8 +86,10 @@ class _51Job:
                 raise e
             else:
                 r.encoding = 'utf-8'
+                print('--------', r.text)
                 if '"result":1' not in r.text:
                     raise Exception('验证码错误')
+        _check_verify_code(retry_count, timeout)
 
     login_count = 0
     login_timeout = 5
