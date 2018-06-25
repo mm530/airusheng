@@ -1,5 +1,5 @@
 from unittest import TestCase
-from airusheng.proxy_ip import Kuaidaili_com, Ip_seofangfa_com
+from forjob.proxy_ip import Kuaidaili_com, Ip_seofangfa_com
 import time
 
 
