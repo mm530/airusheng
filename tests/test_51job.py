@@ -37,6 +37,10 @@ class Test(TestCase):
 
         _51job.local_test(ok_ips)
 
+    def test_local_test_do_not_use_proxy(self):
+        account_init()
+        _51job.local_test([])
+
     def test_distribute_delivery(self):
         account_init()
         _51job.distribute_delivery()

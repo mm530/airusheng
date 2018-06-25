@@ -551,11 +551,12 @@ def local_test(ips):
         ji = 0
         jus = sp.search(page=i, keyword=keyword, session=True)
         while ji < len(jus):
-            index = random.randint(0, len(ips) - 1)
-            proxies = {
-                'http': ips[index].type + '://' + ips[index].ip + ';' + ips[index].port,
-                'https': ips[index].type + '://' + ips[index].ip + ';' + ips[index].port,
-            }
+            if len(ips) > 0:
+                index = random.randint(0, len(ips) - 1)
+                proxies = {
+                    'http': ips[index].type + '://' + ips[index].ip + ';' + ips[index].port,
+                    'https': ips[index].type + '://' + ips[index].ip + ';' + ips[index].port,
+                }
             try:
                 sp.delivery(jus[ji][0], jus[ji][1], proxies=proxies)
             except:
