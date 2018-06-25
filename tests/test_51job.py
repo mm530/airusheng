@@ -5,6 +5,7 @@ from airusheng.proxy_ip import get_ips
 import random
 from threading import Thread
 import os
+from airusheng.proxy_ip import  IP
 
 
 def get_checked_ip(ips):
@@ -60,7 +61,14 @@ class Test(TestCase):
         url = 'https://i.51job.com/delivery/delivery.php?rand=0.4838858831437891&jsoncallback=jQuery18309977296096096169_1529629370861&jobid=(103694161%3A0%2C103686203%3A0)&prd=search.51job.com&prp=01&cd=search.51job.com&cp=01&resumeid=&cvlan=&coverid=&qpostset=&elementname=delivery_jobid&deliverytype=2&deliverydomain=%2F%2Fi.51job.com&language=c&imgpath=%2F%2Fimg03.51jobcdn.com&_=1529629376314'
         print(urllib.parse.unquote(url))
 
-    def test_local_many_test(self):
+    def test_local_many_test_use_special_proxy(self):
+        _51job.account_init()
+        ips = [
+            IP('221.7.255.168', '80', 'http', None, None, None, None)
+        ]
+        _51job.local_many_test(ips)
+
+    def test_local_many_test_do_not_use_proxy(self):
         _51job.account_init()
         _51job.local_many_test([])
 

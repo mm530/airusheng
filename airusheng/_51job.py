@@ -93,7 +93,7 @@ class _51Job:
 
     login_count = 0
     login_timeout = 5
-    def login(self):
+    def login(self, proxies={}):
         if self.login_count > 3:
             raise Exception('提交登录表单，超时重试超过3次')
         headers = {
@@ -118,7 +118,7 @@ class _51Job:
             'isread': 'on'
         }
         try:
-            r = self.session.post('https://login.51job.com/ajax/login.php', headers=headers, timeout=self.login_timeout, data=form_data)
+            r = self.session.post('https://login.51job.com/ajax/login.php', headers=headers, timeout=self.login_timeout, data=form_data, proxies=proxies)
         except requests.exceptions.ReadTimeout as e:
             self.login_count += 1
             self.login_timeout += 5
@@ -623,7 +623,16 @@ def local_many_test(ips):
     '''
     now = time.time()
     sp = _51Job()
-    sp.login()
+
+    proxies = {}
+    if len(ips) > 0:
+        index = random.randint(0, len(ips) - 1)
+        proxies = {
+            'http': ips[index].type + '://' + ips[index].ip + ':' + ips[index].port,
+            'https': ips[index].type + '://' + ips[index].ip + ':' + ips[index].port,
+        }
+
+    sp.login(proxies)
     jusu = sp.search(page=1, keyword=KEYWORD, session=True, many=True)
     print('总页数:', sp.total_page)
 
