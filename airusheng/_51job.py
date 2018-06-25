@@ -48,7 +48,7 @@ class _51Job:
             self.init_timeout += 5
             self.__init__()
         except requests.exceptions.ConnectionError as e: # 远程主机强迫关闭了一个现有的连接
-            self.__init__()
+            raise e
         else:
             r.raise_for_status()
 
@@ -81,11 +81,15 @@ class _51Job:
         try:
             r = self.session.post('https://login.51job.com/ajax/login.php', headers=headers, timeout=self.login_timeout, data=form_data)
         except requests.exceptions.ReadTimeout as e:
-            self.logout_count += 1
+            self.login_count += 1
+            self.login_timeout += 5
+            self.login()
+        except requests.exceptions.ConnectTimeout as e:
+            self.login_count += 1
             self.login_timeout += 5
             self.login()
         except requests.exceptions.ConnectionError as e:
-            self.login()
+            raise Exception('服务器接收到请求之后丢弃了这个连接')
         else:
             r.raise_for_status()
             r.encoding = 'gbk'
@@ -117,8 +121,12 @@ class _51Job:
             self._51job_com_count += 1
             self._51job_com_timeout += 5
             self._51job_com()
-        except requests.exceptions.ConnectionError as e:
+        except requests.exceptions.ConnectTimeout as e:
+            self._51job_com_count += 1
+            self._51job_com_timeout += 5
             self._51job_com()
+        except requests.exceptions.ConnectionError as e:
+            raise Exception('服务器接收到请求之后，丢弃了这个连接')
         else:
             r.raise_for_status()
             r.encoding = 'gbk'
@@ -128,6 +136,9 @@ class _51Job:
     search_count = 0
     search_timeout = 5
     def search(self, page=1, keyword='爬虫', session=False, many=False):
+        '''
+        如果是非批量投递，则返回[[job_id, job_url],...,n]，否则返回[job_id,...,n], so_url
+        '''
         if self.search_count > 100:
             raise Exception('搜索重试超过100次')
         url = requests.utils.requote_uri('https://search.51job.com/list/040000,000000,0000,00,9,07,' + keyword + ',2,' + str(page) + '.html?lang=c&stype=1&postchannel=0000&workyear=99&cotype=99&degreefrom=99&jobterm=99&companysize=99&lonlat=0%2C0&radius=-1&ord_field=0&confirmdate=9&fromType=21&dibiaoid=0&address=&line=&specialarea=00&from=&welfare=')
@@ -150,9 +161,13 @@ class _51Job:
         except requests.exceptions.ReadTimeout as e:
             self.search_count += 1
             self.search_timeout += 5
-            self.search(page, keyword, session)
+            self.search(page, keyword, session, many)
+        except requests.exceptions.ConnectTimeout as e:
+            self.search_count += 1
+            self.search_timeout += 5
+            self.search(page, keyword, session, many)
         except requests.exceptions.ConnectionError as e:
-            self.search(page, keyword, session)
+            raise Exception('服务器接收到请求后，主动断开了连接')
         else:
             r.raise_for_status()
             r.encoding = 'gbk'
@@ -164,9 +179,9 @@ class _51Job:
             for el in els:
                 try:
                     company_name = el.xpath('./span[@class="t2"]/a/text()')[0].strip()
-                    company_url = el.xpath('./span[@class="t2"]/a/@href')[0].strip()
-                    company_addr = el.xpath('./span[@class="t3"]/text()')[0].strip()
-                    publish_date = el.xpath('./span[@class="t5"]/text()')[0].strip()
+                    # company_url = el.xpath('./span[@class="t2"]/a/@href')[0].strip()
+                    # company_addr = el.xpath('./span[@class="t3"]/text()')[0].strip()
+                    # publish_date = el.xpath('./span[@class="t5"]/text()')[0].strip()
                     job_name = el.xpath('./p[@class="t1 "]/span/a/text()')[0].strip()
                     job_url = el.xpath('./p[@class="t1 "]/span/a/@href')[0].strip()
                     job_id = el.xpath('./p[@class="t1 "]/input/@value')[0].strip()
@@ -208,7 +223,6 @@ class _51Job:
         delivery_timeout = 30
 
         def _delivery(job_id, job_url, delivery_count, delivery_timeout, proxies):
-            delivery_count += 1
             if delivery_count > 3:
                 raise Exception('投递次数超过3次')
             url = 'https://i.51job.com/delivery/delivery.php'
@@ -242,10 +256,15 @@ class _51Job:
             try:
                 r = self.session.get(url, headers=OrderedDict(headers), timeout=delivery_timeout, params=form_data)
             except requests.exceptions.ReadTimeout as e:
+                delivery_count += 1
+                delivery_timeout += 5
+                _delivery(job_id, job_url, delivery_count, delivery_timeout, proxies)
+            except requests.exceptions.ConnectTimeout as e:
+                delivery_count += 1
                 delivery_timeout += 5
                 _delivery(job_id, job_url, delivery_count, delivery_timeout, proxies)
             except requests.exceptions.ConnectionError as e:
-                _delivery(job_id, job_url, delivery_count, delivery_timeout, proxies)
+                raise Exception('服务器接收到这个请求，但是主动断开了连接')
             else:
                 r.raise_for_status()
                 r.encoding = 'gbk'
@@ -259,16 +278,32 @@ class _51Job:
         delivery_timeout = 30
 
         def _delivery_many(job_ids, so_url, delivery_count, delivery_timeout, proxies):
-            delivery_count += 1
             if delivery_count > 3:
                 raise Exception('投递次数超过3次')
             job_id_str = ''
             for ji in job_ids:
                 job_id_str = str(ji) + ':' + '0,'
             job_id_str = job_id_str[:-1]
-            url = 'https://i.51job.com//delivery/delivery.php?rand=' + str(
-                random.random()) + '&jsoncallback=jsonp' + str(int(time.time())) + '&_=' + str(int(
-                time.time())) + '&jobid=(' + job_id_str + ')&prd=search.51job.com&prp=01&cd=jobs.51job.com&cp=01&resumeid=&cvlan=&coverid=&qpostset=&elementname=hidJobID&deliverytype=2&deliverydomain=//i.51job.com/&language=c&imgpath=//img06.51jobcdn.com/'
+            url = 'https://i.51job.com/delivery/delivery.php'
+            form_data = {
+                '_': int(time.time()),
+                'cd': 'search.51job.com',
+                'coverid': '',
+                'cp': '01',
+                'cvlan': '',
+                'deliverydomain': '//i.51job.com',
+                'deliverytype': '2',
+                'elementname': 'delivery_jobid',
+                'imgpath': '//img06.51jobcdn.com',
+                'jobid': '(' + job_id_str + ')',
+                'jsoncallback': 'jQuery%d_%d' % (int(time.time()), int(time.time())),
+                'language': 'c',
+                'prd': 'search.51job.com',
+                'prp': '01',
+                'qpostset': '',
+                'rand': random.random(),
+                'resumeid': '',
+            }
             headers = {
                 'Accept': '*/*',
                 'Accept-Encoding': 'gzip, deflate, br',
@@ -278,13 +313,17 @@ class _51Job:
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36',
             }
             try:
-                r = self.session.get(url, headers=headers, timeout=delivery_timeout, proxies=proxies)
-                print('.', end='')
+                r = self.session.get(url, headers=headers, timeout=delivery_timeout, proxies=proxies, params=form_data)
             except requests.exceptions.ReadTimeout as e:
+                delivery_count += 1
+                delivery_timeout += 5
+                _delivery_many(job_ids, so_url, delivery_count, delivery_timeout, proxies)
+            except requests.exceptions.ConnectTimeout as e:
+                delivery_count += 1
                 delivery_timeout += 5
                 _delivery_many(job_ids, so_url, delivery_count, delivery_timeout, proxies)
             except requests.exceptions.ConnectionError as e:
-                _delivery_many(job_ids, so_url, delivery_count, delivery_timeout, proxies)
+                raise Exception('服务器接收到这个请求，但是主动断开了连接')
             else:
                 r.raise_for_status()
                 r.encoding = 'gbk'
@@ -296,7 +335,6 @@ class _51Job:
     logout_count = 0
     logout_timeout = 5
     def logout(self):
-        self.logout_count += 1
         if self.logout_count > 3:
             raise Exception('登出重试超过3次')
         url = 'https://login.51job.com/logout.php?lang=c'
@@ -314,10 +352,15 @@ class _51Job:
         try:
             self.session.get(url, headers=headers)
         except requests.exceptions.ReadTimeout as e:
+            self.logout_count += 1
+            self.logout_timeout += 5
+            self.logout()
+        except requests.exceptions.ConnectTimeout as e:
+            self.logout_count += 1
             self.logout_timeout += 5
             self.logout()
         except requests.exceptions.ConnectionError as e:
-            self.logout()
+            raise Exception('服务器接收了这个请求，但是主动断开了连接')
         else:
             self.session.close()
 
@@ -336,8 +379,11 @@ class _51Job:
             except requests.exceptions.ReadTimeout as e:
                 timeout += 5
                 _download_captcha(count, timeout)
-            except requests.exceptions.ConnectionError as e:
+            except requests.exceptions.ConnectTimeout as e:
+                timeout += 5
                 _download_captcha(count, timeout)
+            except requests.exceptions.ConnectionError as e:
+                raise e
             else:
                 r.raise_for_status()
                 im = Image.open(BytesIO(r.content))
