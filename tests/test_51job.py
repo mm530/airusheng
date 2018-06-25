@@ -64,7 +64,7 @@ class Test(TestCase):
     def test_local_many_test_use_special_proxy(self):
         _51job.account_init()
         ips = [
-            IP('221.7.255.168', '80', 'http', None, None, None, None)
+            IP('221.7.255.168', '80', 'https', None, None, None, None)
         ]
         _51job.local_many_test(ips)
 

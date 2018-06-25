@@ -101,12 +101,13 @@ class _51Job:
             'Accept-Encoding': 'gzip, deflate, br',
             'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
             'Cache-Control': 'max-age=0',
-            'Connection': 'keep-alive',
             'Content-Length': '95',
             'Content-Type': 'application/x-www-form-urlencoded',
             'Host': 'login.51job.com',
             'Origin': 'https://www.51job.com',
-            'Referer': 'https://www.51job.com/'
+            'Referer': 'https://www.51job.com/',
+            'Upgrade-Insecure-Requests': '1',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36',
         }
         form_data = {
             'action': 'save',
@@ -118,7 +119,7 @@ class _51Job:
             'isread': 'on'
         }
         try:
-            r = self.session.post('https://login.51job.com/ajax/login.php', headers=headers, timeout=self.login_timeout, data=form_data, proxies=proxies)
+            r = self.session.post('https://login.51job.com/ajax/login.php', headers=OrderedDict(headers), timeout=self.login_timeout, data=form_data, proxies=proxies)
         except requests.exceptions.ReadTimeout as e:
             self.login_count += 1
             self.login_timeout += 5
@@ -633,6 +634,7 @@ def local_many_test(ips):
         }
 
     sp.login(proxies)
+    sp._51job_com()
     jusu = sp.search(page=1, keyword=KEYWORD, session=True, many=True)
     print('总页数:', sp.total_page)
 
