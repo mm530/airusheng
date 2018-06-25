@@ -1,7 +1,7 @@
 from setuptools import setup
 
 PACKAGES = [
-    'forjob',
+    'lemon',
 ]
 
 REQUIRES = [
@@ -13,13 +13,13 @@ REQUIRES = [
 ]
 
 setup(
-    name='forjob',
+    name='lemon',
     version='1.0.1',
     description='',
     long_description='',
     author='mm530',
     author_email='mm5303344@163.com',
-    url='https://github.com/mm530/forjob',
+    url='https://github.com/mm530/lemon',
     include_package_data=True,
     install_requires=REQUIRES,
     zip_safe=False,

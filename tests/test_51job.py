@@ -1,11 +1,11 @@
 from unittest import TestCase
-from forjob import _51job
+from lemon import _51job
 import urllib.parse
-from forjob.proxy_ip import get_ips
+from lemon.proxy_ip import get_ips
 import random
 from threading import Thread
 import os
-from forjob.proxy_ip import  IP
+from lemon.proxy_ip import  IP
 
 
 def get_checked_ip(ips):
