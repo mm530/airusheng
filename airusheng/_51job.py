@@ -52,6 +52,43 @@ class _51Job:
         else:
             r.raise_for_status()
 
+    def check_verify_code(self, verifycode):
+        retry_count = 0
+        timeout = 5
+        def _check_verify_code(retry_count, timeout):
+            url = 'https://login.51job.com/ajax/checkcode.php'
+            headers = {
+                'Accept':'*/*',
+                'Accept-Encoding':'gzip, deflate, br',
+                'Accept-Language':'zh-CN,zh;q=0.9',
+                'Host':'login.51job.com',
+                'Referer':'https://www.51job.com/',
+                'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36'
+            }
+            form_data = {
+                'jsoncallback':'jQuery%d_%d' % (int(time.time()), int(time.time())),
+                'verifycode': verifycode,
+                'type':'3',
+                'from_domain':'my',
+                '_': str(int(time.time())),
+            }
+            try:
+                r = self.session.get(url, headers=headers, timeout=timeout, params=form_data)
+            except requests.exceptions.ConnectTimeout as e:
+                retry_count += 1
+                timeout += 5
+                _check_verify_code(retry_count, timeout)
+            except requests.exceptions.ReadTimeout as e:
+                retry_count += 1
+                timeout += 5
+                _check_verify_code(retry_count, timeout)
+            except requests.exceptions.ConnectionError as e:
+                raise e
+            else:
+                r.encoding = 'utf-8'
+                if '"result":1' not in r.text:
+                    raise Exception('验证码错误')
+
     login_count = 0
     login_timeout = 5
     def login(self):
@@ -364,7 +401,7 @@ class _51Job:
         else:
             self.session.close()
 
-    def download_captcha(self, session=False):
+    def download_captcha(self, session=False, debug=False):
         count = 0
         timeout = 5
         def _download_captcha(count, timeout):
@@ -390,6 +427,9 @@ class _51Job:
                 if not os.path.exists('51job_captcha'):
                     os.mkdir('51job_captcha')
                 im.save('51job_captcha' + os.path.sep + str(time.time()) + '.jpg')
+
+                if debug:
+                    im.show()
 
         _download_captcha(count, timeout)
 

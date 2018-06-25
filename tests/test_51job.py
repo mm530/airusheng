@@ -75,3 +75,13 @@ class Test(TestCase):
         ip = ips[index]
         result = _51job.check_proxy_i_51job_com(ip)
         self.assertTrue(result)
+
+    def test_check_verify_code(self):
+        _51job.account_init()
+
+        sp = _51job._51Job()
+        print(_51job._51_ACCOUNT)
+        sp.download_captcha(True, True)
+        sp.check_verify_code(input('input verify code:'))
+        sp.login()
+        sp.logout()
