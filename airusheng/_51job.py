@@ -18,7 +18,7 @@ _51_PASSWD = 'YOUR PASS'
 KEYWORD = 'python'
 
 FILTER_COMPANY = ['天泰', '猎芯', '有棵树']
-FILTER_JOB_NAME = ['人工智能', '数据分析', 'java', 'Java', '大数据', '异地', 'ios', 'IOS']
+FILTER_JOB_NAME = ['人工智能', '数据分析', 'java', '大数据', '异地', 'ios']
 
 
 class _51Job:
@@ -227,10 +227,10 @@ class _51Job:
 
                     filter_count = 0
                     for filter_company in FILTER_COMPANY:
-                        if filter_company in company_name:
+                        if filter_company.lower() in company_name.lower():
                             filter_count += 1
                     for filter_job_name in FILTER_JOB_NAME:
-                        if filter_job_name in job_name:
+                        if filter_job_name.lower() in job_name.lower():
                             filter_count += 1
                     if filter_count == 0:
                         if not many:
