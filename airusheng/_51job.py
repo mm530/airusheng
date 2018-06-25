@@ -542,6 +542,8 @@ def local_test(ips):
         except:
             del ips[index]
             continue
+        finally:
+            time.sleep(10)
         ji += 1
 
     print('\n第1页任务结束')
@@ -648,3 +650,35 @@ def check_proxy_i_51job_com(ip):
         r.encoding = 'utf-8'
         # print(r.text)
         return True
+
+
+def account_init():
+    global _51_PASSWD, _51_ACCOUNT, KEYWORD
+    def input_apk():
+        global _51_PASSWD, _51_ACCOUNT, KEYWORD
+        _51_ACCOUNT = input('tel:')
+        _51_PASSWD = input('pass:')
+        KEYWORD = input('keyword:')
+
+    if os.path.exists('.51job.conf'):
+        lines = None
+        with open('.51job.conf', 'r', encoding='utf-8') as f:
+            lines = f.read()
+        if lines:
+            try:
+                tmp = lines.split('~~~')
+                _51_ACCOUNT = tmp[0]
+                _51_PASSWD = tmp[1]
+                KEYWORD = tmp[2]
+            except Exception as e:
+                input_apk()
+        else:
+            input_apk()
+    else:
+        input_apk()
+
+    if _51_ACCOUNT is None or _51_PASSWD is None or KEYWORD is None:
+        raise Exception('输入参数错误')
+    else:
+        with open('.51job.conf', 'w') as f:
+            f.write(_51_ACCOUNT + '~~~' + _51_PASSWD + '~~~' + KEYWORD)

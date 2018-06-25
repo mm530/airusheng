@@ -6,15 +6,26 @@ import time
 
 
 class IP:
-    def __init__(self, ip, port, type, speed, check_time):
+    def __init__(self, ip, port, type, speed, check_time, live_time, addr):
         self.ip = ip
         self.port = port
         self.type = type
         self.speed = speed
-        self.check_time = check_time
+
+        self.check_time = check_time  # 最后校验时间
+        self.live_time = live_time  # 存活时间
+        self.addr = addr  # 位置
 
     def __str__(self):
-        return self.type + self.ip + ':' + self.port
+        return str({
+            'ip': self.ip,
+            'port': self.port,
+            'type': self.type,
+            'speed': self.speed,
+            'check_time': self.check_time,
+            'live_time': self.live_time,
+            'addr': self.addr
+        })
 
 
 class Kuaidaili_com:
@@ -50,10 +61,13 @@ class Kuaidaili_com:
                     ip = tds[0].xpath('./text()')[0].strip()
                     port = tds[1].xpath('./text()')[0].strip()
                     type = tds[3].xpath('./text()')[0].strip().lower()
+                    addr = tds[4].xpath('./text()')[0].strip().lower()
                     speed = tds[5].xpath('./text()')[0].strip()[:-1]
                     check_time = tds[6].xpath('./text()')[0].strip()
 
-                    ips.append(IP(ip, port, type, speed, check_time))
+                    live_time = None
+
+                    ips.append(IP(ip, port, type, speed, check_time, live_time, addr))
             except Exception as e:
                 print(e)
                 if not os.path.exists('kuaidaili_com'):
@@ -96,9 +110,11 @@ class Ip_seofangfa_com:
                 ip = tds[0].xpath('./text()')[0].strip()
                 port = tds[1].xpath('./text()')[0].strip()
                 speed = tds[2].xpath('./text()')[0].strip()
+                addr = tds[3].xpath('./text()')[0].strip()
                 check_time = tds[4].xpath('./text()')[0].strip()
                 type = 'http'
-                ips.append(IP(ip, port, type, speed, check_time))
+                live_time = None
+                ips.append(IP(ip, port, type, speed, check_time, live_time, addr))
             return ips
 
 

@@ -107,3 +107,4 @@ venv.bak/
 /tjair_captcha_split
 /51job
 /.idea
+.51job.conf

@@ -4,6 +4,7 @@ import urllib.parse
 from airusheng.proxy_ip import get_ips
 import random
 from threading import Thread
+import os
 
 
 def get_checked_ip(ips):
@@ -22,15 +23,16 @@ def get_checked_ip(ips):
     return ok_ips
 
 
-def account_init():
-    _51job._51_ACCOUNT = input('tel:')
-    _51job._51_PASSWD = input('pass:')
-    _51job.KEYWORD = input('keyword:')
-
-
 class Test(TestCase):
+    def test_account_init(self):
+        _51job.account_init()
+        if os.path.exists('.51job.conf'):
+            with open('.51job.conf', 'r') as f:
+                print(f.read())
+        print(_51job._51_ACCOUNT, _51job._51_PASSWD, _51job.KEYWORD)
+
     def test_local_test(self):
-        account_init()
+        _51job.account_init()
         ips = get_ips()
         ok_ips = get_checked_ip(ips)
         print('可以使用的IP有:%d个' % len(ok_ips), ok_ips)
@@ -38,11 +40,11 @@ class Test(TestCase):
         _51job.local_test(ok_ips)
 
     def test_local_test_do_not_use_proxy(self):
-        account_init()
+        _51job.account_init()
         _51job.local_test([])
 
     def test_distribute_delivery(self):
-        account_init()
+        _51job.account_init()
         _51job.distribute_delivery()
 
     def test_do_delivery_task(self):
@@ -59,7 +61,7 @@ class Test(TestCase):
         print(urllib.parse.unquote(url))
 
     def test_local_many_test(self):
-        account_init()
+        _51job.account_init()
         _51job.local_many_test([])
 
     def test_download_capthca(self):
