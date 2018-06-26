@@ -33,3 +33,8 @@ _51job.local_many_test(proxy_ips)
 $ pip3 install git+https://github.com/mm530/lemon
 ```
 该库仅仅支持Python3.6。
+
+## 未来还需增加的功能
+- [ ] 投递职位，速度太快会封IP
+- [ ] 训练登录验证码的神经网络模型
+- [ ] 终端日志信息的完善
