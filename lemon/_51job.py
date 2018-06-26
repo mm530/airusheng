@@ -713,9 +713,10 @@ def account_init():
         _51_PASSWD = input('pass:')
         KEYWORD = input('keyword:')
 
-    if os.path.exists('.51job.conf'):
+    cfg = os.path.expanduser('~') + os.path.sep + '.51job.conf'
+    if os.path.exists(cfg):
         lines = None
-        with open('.51job.conf', 'r', encoding='utf-8') as f:
+        with open(cfg, 'r', encoding='utf-8') as f:
             lines = f.read()
         if lines:
             try:
@@ -733,5 +734,5 @@ def account_init():
     if _51_ACCOUNT is None or _51_PASSWD is None or KEYWORD is None:
         raise Exception('输入参数错误')
     else:
-        with open('.51job.conf', 'w') as f:
+        with open(cfg, 'w') as f:
             f.write(_51_ACCOUNT + '~~~' + _51_PASSWD + '~~~' + KEYWORD)

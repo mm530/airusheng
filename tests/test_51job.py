@@ -27,8 +27,9 @@ def get_checked_ip(ips):
 class Test(TestCase):
     def test_account_init(self):
         _51job.account_init()
-        if os.path.exists('.51job.conf'):
-            with open('.51job.conf', 'r') as f:
+        cfg = os.path.expanduser('~') + os.path.sep + '.51job.conf'
+        if os.path.exists(cfg):
+            with open(cfg, 'r') as f:
                 print(f.read())
         print(_51job._51_ACCOUNT, _51job._51_PASSWD, _51job.KEYWORD)
 
