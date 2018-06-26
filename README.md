@@ -40,6 +40,9 @@ $ pip3 install git+https://github.com/mm530/lemon
 - [ ] 终端日志信息的完善
 
 ## 鸣谢
+* Python
+* Linux
+* Pycharm
 * requests
 * lxml
 * Pillow
