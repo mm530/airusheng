@@ -129,7 +129,9 @@ class _51Job:
             self.login_timeout += 5
             self.login()
         except requests.exceptions.ConnectionError as e:
-            raise Exception('服务器接收到请求之后丢弃了这个连接')
+            self.login_count += 1
+            self.login_timeout += 5
+            self.login()
         else:
             r.raise_for_status()
             r.encoding = 'gbk'
