@@ -11,13 +11,13 @@ from PIL import Image
 from io import BytesIO
 import pickle
 import socket
-from requests.utils import OrderedDict
+from requests.utils import OrderedDict, dict_from_cookiejar
 
 _51_ACCOUNT = 'YOUR TEL'
 _51_PASSWD = 'YOUR PASS'
 KEYWORD = 'python'
 
-FILTER_COMPANY = ['天泰', '猎芯', '有棵树']
+FILTER_COMPANY = ['天泰', '猎芯', '有棵树', '就业', '你我']
 FILTER_JOB_NAME = ['人工智能', '数据分析', 'java', '大数据', '异地', 'ios']
 
 
@@ -219,36 +219,39 @@ class _51Job:
 
             err_count = 0
             for el in els:
-                try:
-                    company_name = el.xpath('./span[@class="t2"]/a/text()')[0].strip()
-                    # company_url = el.xpath('./span[@class="t2"]/a/@href')[0].strip()
-                    # company_addr = el.xpath('./span[@class="t3"]/text()')[0].strip()
-                    # publish_date = el.xpath('./span[@class="t5"]/text()')[0].strip()
-                    job_name = el.xpath('./p[@class="t1 "]/span/a/text()')[0].strip()
-                    job_url = el.xpath('./p[@class="t1 "]/span/a/@href')[0].strip()
-                    job_id = el.xpath('./p[@class="t1 "]/input/@value')[0].strip()
+                company_name = el.xpath('./span[@class="t2"]/a/text()')[0].strip()
+                # company_url = el.xpath('./span[@class="t2"]/a/@href')[0].strip()
+                # company_addr = el.xpath('./span[@class="t3"]/text()')[0].strip()
+                # publish_date = el.xpath('./span[@class="t5"]/text()')[0].strip()
+                job_name_els = el.xpath('./p[@class="t1 "]/span/a/text()')  # 普通招聘
+                if len(job_name_els) == 0:
+                    job_name_els = el.xpath('./p[@class="t1 tg1"]/span/a/text()')  # 紧急招聘
+                job_name = job_name_els[0].strip()
 
-                    filter_count = 0
-                    for filter_company in FILTER_COMPANY:
-                        if filter_company.lower() in company_name.lower():
-                            filter_count += 1
-                    for filter_job_name in FILTER_JOB_NAME:
-                        if filter_job_name.lower() in job_name.lower():
-                            filter_count += 1
-                    if filter_count == 0:
-                        if not many:
-                            jus.append([job_id, job_url])
-                        else:
-                            jus.append(job_id)
+                job_url_els = el.xpath('./p[@class="t1 "]/span/a/@href')
+                if len(job_url_els) == 0:
+                    job_url_els = el.xpath('./p[@class="t1 tg1"]/span/a/@href')
+                job_url = job_url_els[0].strip()
 
-                except Exception as e:
-                    err_count += 1
-                    if err_count == 1:
-                        if not os.path.exists('51job'):
-                            os.mkdir('51job')
-                        with open('51job' + os.path.sep + 'delivery_' + str(time.time()) + '.log', 'w', encoding='gbk') as f:
-                            f.write(r.text)
-                    continue
+                job_id_els = el.xpath('./p[@class="t1 "]/input/@value')
+                if len(job_id_els) == 0:
+                    job_id_els = el.xpath('./p[@class="t1 tg1"]/input/@value')
+                job_id = job_id_els[0].strip()
+
+                print(job_name, company_name, job_id)
+
+                filter_count = 0
+                for filter_company in FILTER_COMPANY:
+                    if filter_company.lower() in company_name.lower():
+                        filter_count += 1
+                for filter_job_name in FILTER_JOB_NAME:
+                    if filter_job_name.lower() in job_name.lower():
+                        filter_count += 1
+                if filter_count == 0:
+                    if not many:
+                        jus.append([job_id, job_url])
+                    else:
+                        jus.append(job_id)
 
             if page == 1:
                 match = re.compile('共\d+页')
@@ -268,7 +271,7 @@ class _51Job:
             if delivery_count > 3:
                 raise Exception('投递次数超过3次')
             url = 'https://i.51job.com/delivery/delivery.php'
-            form_data = {
+            form_data = OrderedDict({
                 '_': int(time.time()),
                 'cd':'search.51job.com',
                 'coverid': '',
@@ -286,7 +289,7 @@ class _51Job:
                 'qpostset':'',
                 'rand': random.random(),
                 'resumeid': '',
-            }
+            })
             headers = {
                 'Accept': '*/*',
                 'Accept-Encoding': 'gzip, deflate, br',
@@ -324,10 +327,10 @@ class _51Job:
                 raise Exception('投递次数超过3次')
             job_id_str = ''
             for ji in job_ids:
-                job_id_str = str(ji) + ':' + '0,'
+                job_id_str += str(ji) + ':' + '0,'
             job_id_str = job_id_str[:-1]
             url = 'https://i.51job.com/delivery/delivery.php'
-            form_data = {
+            form_data = OrderedDict({
                 '_': int(time.time()),
                 'cd': 'search.51job.com',
                 'coverid': '',
@@ -345,7 +348,7 @@ class _51Job:
                 'qpostset': '',
                 'rand': random.random(),
                 'resumeid': '',
-            }
+            })
             headers = {
                 'Accept': '*/*',
                 'Accept-Encoding': 'gzip, deflate, br',
@@ -370,6 +373,7 @@ class _51Job:
                 r.raise_for_status()
                 r.encoding = 'gbk'
                 print(r.text)
+                # print(dict_from_cookiejar(self.session.cookies)) 查看请求cookie
                 if '申请中包含已申请过的职位' not in r.text and '成功' not in r.text:
                     raise Exception('批量申请失败')
         _delivery_many(job_ids, so_url, delivery_count, delivery_timeout, proxies)
@@ -736,5 +740,5 @@ def account_init():
     if _51_ACCOUNT is None or _51_PASSWD is None or KEYWORD is None:
         raise Exception('输入参数错误')
     else:
-        with open(cfg, 'w') as f:
+        with open(cfg, 'w', encoding='utf-8') as f:
             f.write(_51_ACCOUNT + '~~~' + _51_PASSWD + '~~~' + KEYWORD)
